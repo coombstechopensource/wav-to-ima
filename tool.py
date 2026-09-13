@@ -21,6 +21,7 @@ import sys
 import wave
 import struct
 import math
+import os
 
 TARGET_RATE = 22050
 
@@ -198,6 +199,8 @@ def convert(input_file, output_file):
 
     with open(output_file, "wb") as f:
         f.write(encoded)
+
+    os.unlink(input_file)
 
     print(f"Output sample rate: {TARGET_RATE} Hz")
     print(f"Duration          : {duration:.2f} seconds")
