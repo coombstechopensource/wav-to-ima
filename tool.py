@@ -1,22 +1,3 @@
-"""
-WAV -> RemindMi raw IMA ADPCM converter
-
-Creates files compatible with the ESP32 RemindMi sketch:
-    4-byte header:
-      uint16 little-endian initial PCM predictor
-      uint8  initial IMA step index
-      uint8  reserved
-    followed by raw IMA ADPCM 4-bit nibbles, LOW nibble first.
-
-Input:
-    PCM WAV, preferably 16-bit.
-    The script also handles 8-bit PCM and resamples to 22050 Hz.
-    Stereo WAV files are downmixed to mono.
-
-Usage:
-    python wav_to_ima.py input.wav output.ima
-"""
-
 import sys
 import wave
 import struct
@@ -40,7 +21,6 @@ INDEX_TABLE = [
     -1, -1, -1, -1, 2, 4, 6, 8,
     -1, -1, -1, -1, 2, 4, 6, 8
 ]
-
 
 def read_wav(filename):
     with wave.open(filename, "rb") as w:
@@ -71,7 +51,6 @@ def read_wav(filename):
 
     return values, rate
 
-
 def resample(samples, source_rate, target_rate):
     if source_rate == target_rate:
         return samples
@@ -98,7 +77,6 @@ def resample(samples, source_rate, target_rate):
 
 
 def choose_initial_index(samples):
-    # Estimate a useful starting step size from the first few differences.
     if len(samples) < 2:
         return 0
 
@@ -149,7 +127,6 @@ def encode_ima(samples):
         if diff >= delta // 4:
             code |= 1
 
-        # Reconstruct the encoder's predictor exactly as the decoder will.
         diffq = step >> 3
         if code & 1:
             diffq += step >> 2
@@ -177,13 +154,10 @@ def encode_ima(samples):
             low_nibble = True
 
     if not low_nibble:
-        # One padding nibble. It is decoded as one extra sample; the
-        # difference is only about 45 microseconds at 22050 Hz.
         packed.append(current_byte)
 
     header = struct.pack("<hBB", initial_predictor, initial_index, 0)
     return header + packed
-
 
 def convert(input_file, output_file):
     samples, source_rate = read_wav(input_file)
@@ -207,7 +181,6 @@ def convert(input_file, output_file):
     print(f"Output size       : {len(encoded):,} bytes")
     print(f"Created           : {output_file}")
 
-
 def main():
     if len(sys.argv) != 3:
         print("Usage: python wav_to_ima.py input.wav output.ima")
@@ -218,7 +191,6 @@ def main():
     except Exception as e:
         print(f"ERROR: {e}")
         sys.exit(1)
-
 
 if __name__ == "__main__":
     main()
